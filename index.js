@@ -122,12 +122,17 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 
   // 🔘 Botones / Modales / Selects (economía)
-  if (
-    interaction.isButton() ||
-    interaction.isStringSelectMenu() ||
-    interaction.isModalSubmit()
-  ) {
-    // lógica de economía aquí
+  if (interaction.isButton()) {
+    // Manejar botones de comprar-dinero
+    const comprarDineroCmd = client.commands.get('comprar-dinero');
+    if (comprarDineroCmd && typeof comprarDineroCmd.handleButton === 'function') {
+      try {
+        await comprarDineroCmd.handleButton(interaction);
+      } catch (error) {
+        logBox('Error', error.message, 'ERROR');
+        await interaction.reply({ content: `${EMOJI_ERROR} Error al procesar el botón.`, ephemeral: true });
+      }
+    }
   }
 });
 

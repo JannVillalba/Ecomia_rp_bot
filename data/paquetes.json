@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "titulo": "Paquete Básico",
+    "descripcion": "Obtén 1000 monedas en el servidor.",
+    "valor": 50,
+    "moneda": "robux",
+    "imagen": "https://placekitten.com/400/300"
+  },
+  {
+    "id": 2,
+    "titulo": "Paquete Premium",
+    "descripcion": "Obtén 5000 monedas y un rol especial.",
+    "valor": 5,
+    "moneda": "dolares",
+    "imagen": "https://placekitten.com/400/300"
+  },
+  {
+    "titulo": "test",
+    "descripcion": "paquete de test",
+    "valor": 100,
+    "moneda": "robux",
+    "imagen": "",
+    "id": 1769531382924
+  }
+]

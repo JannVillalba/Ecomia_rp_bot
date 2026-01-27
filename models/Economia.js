@@ -1,7 +1,4 @@
-// models/Economia.js
-
 const { DataTypes } = require('sequelize');
-// ✅ CORRECCIÓN: Usamos desestructuración
 const { sequelize } = require('../utils/db');
 
 const Economia = sequelize.define('Economia', {
@@ -20,26 +17,48 @@ const Economia = sequelize.define('Economia', {
         defaultValue: 0,
         allowNull: false,
     },
-    ilegal: {
+    ilega: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
         allowNull: false,
     },
-    // ---- CAMPO DE INVENTARIO ----
+    // --- Campos de Supervivencia (Art. 81, 89, 90) ---
+    hambre: {
+        type: DataTypes.INTEGER,
+        defaultValue: 100,
+    },
+    sed: {
+        type: DataTypes.INTEGER,
+        defaultValue: 100,
+    },
+    lastEat: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+    },
+    lastDrink: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+    },
+    // --- Sistema Bancario (Art. 27) ---
+    creditScore: {
+        type: DataTypes.INTEGER,
+        defaultValue: 5,
+    },
+    // --- Inventario para Producción (Art. 91-151) ---
     inventario: {
         type: DataTypes.TEXT,
         allowNull: false,
         defaultValue: "[]",
-        get: function() {
-            const value = this.getDataValue('inventario');
+        get() {
+            const rawValue = this.getDataValue('inventario');
             try {
-                return JSON.parse(value);
+                return rawValue ? JSON.parse(rawValue) : [];
             } catch (e) {
-                return []; 
+                return [];
             }
         },
-        set: function(value) {
-            return this.setDataValue('inventario', JSON.stringify(value));
+        set(value) {
+            this.setDataValue('inventario', JSON.stringify(value));
         }
     }
 });

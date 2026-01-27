@@ -1,0 +1,26 @@
+{
+  "name": "México Nuevo Laredo [ER:LC]",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.77",
+    "canvas": "^3.2.0",
+    "discord": "^0.8.2",
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.3",
+    "node-fetch": "^2.7.0",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
+    "unb-api": "^1.4.0"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.3"
+  }
+}

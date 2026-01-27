@@ -1,0 +1,43 @@
+# Node.js
+node_modules/
+.env
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+logs
+*.log
+
+# OS
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Data
+/data/*.sqlite
+/data/*.db
+/data/*.bak
+
+# Misc
+*.tgz
+*.tar.gz
+
+# Build
+/dist/
+/build/
+
+# Coverage
+coverage/
+
+# Migrations
+migrations/*.log
+
+# NPM cache
+.npm/
+# Cache
+_cacache/

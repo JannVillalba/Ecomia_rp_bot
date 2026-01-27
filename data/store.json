@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": "1",
+      "nombre": "Kit medico",
+      "precio": 10,
+      "descripcion": "Kit de test",
+      "emoji": "⚕️",
+      "rol": "1460691744591970304"
+    }
+  ]
+}

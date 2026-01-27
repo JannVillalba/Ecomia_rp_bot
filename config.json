@@ -1,0 +1,19 @@
+{
+  "jobs": {
+    "1460691619836723515": {
+      "dinero": 100,
+      "tiempo": 1,
+      "unidad": "minutos"
+    },
+    "1460691660655694109": {
+      "dinero": 6000,
+      "tiempo": 15,
+      "unidad": "dias"
+    },
+    "1460691644373401605": {
+      "dinero": 100,
+      "tiempo": 1,
+      "unidad": "minutos"
+    }
+  }
+}

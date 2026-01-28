@@ -31,7 +31,7 @@ module.exports = {
                 .addChoices(
                     { name: '💰 Cartera', value: 'cartera' },
                     { name: '🏦 Banco', value: 'banco' },
-                    { name: '💸 Ilegal', value: 'ilega' },
+                    { name: '💸 Ilegal', value: 'ilega' }, // Cambiado a 'ilega' para coincidir con tu modelo
                 ))
         .addIntegerOption(option =>
             option.setName('cantidad')
@@ -74,37 +74,24 @@ module.exports = {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         try {
-            // 2. Buscar o crear con los defaults del nuevo modelo
-            let [userEco] = await Economia.findOrCreate({ 
-                where: { discordId: usuarioObjetivo.id },
-                defaults: {
-                    cartera: 0,
-                    banco: 0,
-                    ilega: 0,
-                    bancoNombre: 'Ninguno',
-                    cuentaTipo: 'Sin cuenta',
-                    creditScore: 5,
-                    inventario: "[]"
-                }
-            });
+            let userEco = await Economia.findOne({ where: { discordId: usuarioObjetivo.id } });
+            if (!userEco) userEco = await Economia.create({ discordId: usuarioObjetivo.id });
 
             const saldoAntes = userEco[tipoSaldo];
-            
-            // 3. Aplicar incremento
-            await userEco.increment(tipoSaldo, { by: cantidad });
-            
-            // Recargamos los datos para obtener el saldo final exacto
-            await userEco.reload();
+            userEco[tipoSaldo] += cantidad;
+            await userEco.save();
             const saldoDespues = userEco[tipoSaldo];
 
-            // Info visual
+            // Emojis según el tipo
             const info = {
                 cartera: { name: 'Cartera', emoji: '💰' },
                 banco: { name: 'Banco', emoji: '🏦' },
                 ilega: { name: 'Fondos Ilegales', emoji: '💸' }
             }[tipoSaldo];
 
-            // 4. Embed de Confirmación
+            // -------------------------------------------------------------
+            // EMBED DE CONFIRMACIÓN (Admin)
+            // -------------------------------------------------------------
             const confirmEmbed = new EmbedBuilder()
                 .setColor(16448250)
                 .setTitle('✅ EMISIÓN COMPLETADA')
@@ -118,21 +105,23 @@ module.exports = {
                     },
                     { name: 'Razón Oficial', value: `\`${razon}\``, inline: true }
                 )
-                .setFooter({ text: `ID: ${usuarioObjetivo.id} | MXLN Hacienda` })
+                .setFooter({ text: `Registro: ${usuarioObjetivo.id}` })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [confirmEmbed] });
 
-            // 5. Embed de Logs
+            // -------------------------------------------------------------
+            // EMBED DE LOGS (Canal de Logs)
+            // -------------------------------------------------------------
             const logEmbed = new EmbedBuilder()
                 .setColor('#2F3136')
-                .setTitle('📜 [LOG] EMISIÓN ADMINISTRATIVA')
+                .setTitle('📜 [LOG] MOVIMIENTO ADMINISTRATIVO')
                 .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL() })
                 .addFields(
                     { name: '👤 Beneficiario', value: usuarioObjetivo.toString(), inline: true },
                     { name: '👮 Autorizado por', value: interaction.user.toString(), inline: true },
                     { name: '💵 Monto', value: `\`${formatoMoneda(cantidad)}\``, inline: true },
-                    { name: '📊 Destino', value: `\`${info.name}\``, inline: true },
+                    { name: '📊 Tipo', value: `\`${info.name}\``, inline: true },
                     { name: '📝 Motivo', value: `\`\`\`${razon}\`\`\``, inline: false }
                 )
                 .setTimestamp();
@@ -141,8 +130,8 @@ module.exports = {
             if (logChannel) await logChannel.send({ embeds: [logEmbed] });
 
         } catch (error) {
-            console.error("Error en añadir-dinero:", error);
-            await interaction.editReply('❌ Fallo crítico al intentar escribir en la base de datos.');
+            console.error(error);
+            await interaction.editReply('❌ Fallo crítico en la transacción.');
         }
     }
 };

@@ -14,6 +14,7 @@ const Economia = require('../models/Economia');
 
 // --- CONSTANTES ---
 const EMOJI_STORE = '🛒';
+const EMOJI_LIST = '📋';
 const EMOJI_CHECK = '<a:71227checkyes:1442172457862561923>';
 const EMOJI_ERROR = '<:874346wrong:1445095979253764116>';
 const EMOJI_BUY_BUTTON = '<:490209buybutton:1445183198626709685>';
@@ -22,9 +23,10 @@ const EMOJI_PREV_PAGE = '<:832632leftarrow:1445184403654443009>';
 const EMOJI_NEXT_PAGE = '<:3010rightarrow:1445184458427863102>';
 
 const ITEMS_PER_PAGE = 6; 
-const ACCENT_COLOR_TIENDA = 3450383; 
-const ACCENT_COLOR_CONFIRM = 16776960; 
+const ACCENT_COLOR_TIENDA = 3450383; // Azul
+const ACCENT_COLOR_CONFIRM = 16776960; // Amarillo
 
+// ID de la Reserva Federal (Coincide con tu comando /banca)
 const RESERVA_FEDERAL_ID = 'FEDERAL_RESERVE';
 
 const formatoMoneda = (cantidad) => {
@@ -36,14 +38,14 @@ const formatoMoneda = (cantidad) => {
     }).format(cantidad);
 };
 
-// --- FUNCIÓN GENERAR TIENDA (Solo Nombre) ---
+// --- FUNCIÓN GENERAR TIENDA ---
 const generateShopMessage = (page, totalPages, items, userBalance) => {
     const start = page * ITEMS_PER_PAGE;
     const itemsOnPage = items.slice(start, start + ITEMS_PER_PAGE);
     const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR_TIENDA); 
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`# ${EMOJI_STORE} Tienda Oficial Nuevo Laredo`)
+        new TextDisplayBuilder().setContent(`# ${EMOJI_STORE} Tienda Oficial Nuevo Laredo [MXLN]`)
     ).addActionRowComponents( 
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -52,12 +54,13 @@ const generateShopMessage = (page, totalPages, items, userBalance) => {
                 .setCustomId("user_balance_dummy")
                 .setDisabled(true)
         )
-    ).addSeparatorComponents(new SeparatorBuilder().setSpacing(1).setDivider(true));
+    ).addSeparatorComponents(new SeparatorBuilder().setSpacing(1).setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ${EMOJI_LIST} Catálogo de Productos`))
+    .addSeparatorComponents(new SeparatorBuilder().setSpacing(1).setDivider(true));
         
     itemsOnPage.forEach((item, index) => {
-        // Solo añadimos el nombre con su emoji, sin descripción ni bloques de código
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`### ${item.emoji} ${item.nombre}`)
+            new TextDisplayBuilder().setContent(`### ${item.emoji} ${item.nombre}\n\`\`\`\n${item.descripcion}\n\`\`\``)
         );
         
         const canAfford = userBalance >= item.precio;
@@ -90,10 +93,11 @@ const generateShopMessage = (page, totalPages, items, userBalance) => {
 const generateConfirmMessage = (itemToBuy) => {
     const confirmContainer = new ContainerBuilder()
         .setAccentColor(ACCENT_COLOR_CONFIRM)
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ⚠️ CONFIRMAR COMPRA`))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ⚠️ CONFIRMACIÓN DE COMPRA`))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `Producto: **${itemToBuy.nombre}**\n` + 
-            `Costo: **${formatoMoneda(itemToBuy.precio)}**`
+            `Estás por adquirir: **${itemToBuy.nombre}**\n` + 
+            `Costo total: **${formatoMoneda(itemToBuy.precio)}**\n\n` + 
+            `*El pago se transferirá directamente a la Reserva Federal.*`
         ));
         
     const confirmRow = new ActionRowBuilder().addComponents(
@@ -140,7 +144,6 @@ module.exports = {
             else if (i.customId.startsWith('buy_')) {
                 confirmingItemId = i.customId.replace('buy_', '');
                 const item = store.items.find(it => it.id === confirmingItemId);
-                if (!item) return;
                 const { container, components } = generateConfirmMessage(item);
                 await i.editReply({ components: [container, ...components], flags: MessageFlags.IsComponentsV2 });
             }
@@ -158,17 +161,19 @@ module.exports = {
                 if (userEco.cartera < item.precio) return i.followUp({ content: '❌ No tienes suficiente dinero.', flags: MessageFlags.Ephemeral });
 
                 try {
+                    // 1. Cobrar al usuario
                     await userEco.update({ 
                         cartera: userEco.cartera - item.precio,
                         inventario: [...(userEco.inventario || []), item.id]
                     });
 
+                    // 2. Transferir a la Reserva Federal
                     const [reserva] = await Economia.findOrCreate({ where: { discordId: RESERVA_FEDERAL_ID } });
                     await reserva.increment('banco', { by: item.precio });
 
                     confirmingItemId = null;
                     await updateStoreView(i);
-                    await i.followUp({ content: `${EMOJI_CHECK} Has comprado **${item.nombre}**.`, flags: MessageFlags.Ephemeral });
+                    await i.followUp({ content: `${EMOJI_CHECK} Has comprado **${item.nombre}**. Pago enviado a la Reserva Federal.`, flags: MessageFlags.Ephemeral });
                 } catch (e) {
                     console.error(e);
                     await i.followUp({ content: '❌ Error en la transacción.', flags: MessageFlags.Ephemeral });
@@ -177,7 +182,7 @@ module.exports = {
         });
 
         collector.on('end', () => {
-            const endContainer = new ContainerBuilder().setAccentColor(10070709).addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${EMOJI_LOCK_STORE} TIENDA CERRADA`));
+            const endContainer = new ContainerBuilder().setAccentColor(10070709).addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${EMOJI_LOCK_STORE} SESIÓN EXPIRADA`));
             interaction.editReply({ components: [endContainer], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
         });
     }

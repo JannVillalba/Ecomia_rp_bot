@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ALLOWED_CHANNEL_ID = '1460692332545310813';
+const configPath = path.join(__dirname, '../../data/bancos_config.json');
 
 const formatoMoneda = (cantidad) => {
     return new Intl.NumberFormat('es-MX', {
@@ -25,31 +26,30 @@ const formatoMoneda = (cantidad) => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-function crearSaldoContainer(targetUser, economia, attachmentFileName) {
-    // Verificar si tiene cuenta grabada en la DB
-    const tieneCuenta = economia.bancoNombre && economia.bancoNombre !== "Ninguno";
-    
+// Función para generar la visual V2
+function crearSaldoContainer(targetUser, economia, attachmentFileName, bancoInfo) {
     const container = new ContainerBuilder()
         .setAccentColor(16448250) 
         
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`## <:5526iconbank:1465809664859050249> ESTADO FINANCIERO - ${targetUser.username}`)
+            new TextDisplayBuilder().setContent(`## 📊 ESTADO FINANCIERO - ${targetUser.username}`)
         )
         
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
 
-        // --- CONEXIÓN CON CREAR-CUENTA ---
+        // Sección de Cuentas Activas
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `### <:5526iconbank:1465809664859050249> SERVICIOS BANCARIOS\n` +
-                (tieneCuenta 
-                    ? `> **Institución:** \`${economia.bancoNombre}\`\n> **Tipo:** \`${economia.cuentaTipo}\`\n> **Estado:** \`ACTIVA\``
-                    : `> <a:71227checkno:1444377968171286622> **Sin cuenta activa.**\n> *Usa \`/crear-cuenta\` para registrarte.*`)
+                `### 🏦 SERVICIOS CONTRATADOS\n` +
+                `> **Banco:** \`${bancoInfo.nombre}\`\n` +
+                `> **Tipo de Cuenta:** \`${bancoInfo.tipo}\`\n` +
+                `> **Rendimiento:** \`${bancoInfo.tasa}%\``
             )
         )
 
         .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
 
+        // Valores en ANSI para colores en bloques de código
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(`**💵 Cartera**\n\`\`\`ansi\n[2;32m${formatoMoneda(economia.cartera)}[0m\n\`\`\``)
         )
@@ -75,11 +75,7 @@ function crearSaldoContainer(targetUser, economia, attachmentFileName) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('saldo')
-        .setDescription('Consulta tu estado de cuenta y efectivo.')
-        .addUserOption(option => 
-            option.setName('usuario')
-                .setDescription('Ver el saldo de alguien más.')
-                .setRequired(false)),
+        .setDescription('Consulta tu estado de cuenta y efectivo.'),
 
     async execute(interaction) {
         if (interaction.channelId !== ALLOWED_CHANNEL_ID) {
@@ -100,31 +96,42 @@ module.exports = {
                 usuarioEco = await Economy.create({ discordId: targetUser.id });
             }
 
-            // 2. Simular carga
+            // 2. Simular carga makial
             const loading = new ContainerBuilder()
                 .setAccentColor(16448250)
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent('## <a:9927apilatency1:1444379371753308372> ACCEDIENDO A LA RED SWIFT...'))
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent('```\n[||||||    ] Sincronizando con Banco Central...\n```'));
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent('## 📡 CONECTANDO CON LA RED BANCARIA...'))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent('```\n[||||      ] Verificando identidad...\n```'));
             
             await interaction.editReply({ components: [loading], flags: [MessageFlags.IsComponentsV2] });
-            await sleep(1000);
+            await sleep(1500);
 
-            // 3. Generar Canvas
+            // 3. Lógica de Banco (Simulada o desde config)
+            // Aquí puedes implementar una lógica para saber qué cuenta tiene el usuario
+            let bancoInfo = { nombre: "Ninguno", tipo: "Sin cuenta", tasa: 0 };
+            
+            // Ejemplo: Si el usuario tiene dinero en el banco, asumimos que tiene una cuenta básica
+            if (usuarioEco.banco > 0) {
+                bancoInfo = { nombre: "BBVA / Assesan", tipo: "Cuenta de Ahorros", tasa: 1.5 };
+            }
+
+            // 4. Generar Canvas
             const imagenBase = await loadImage('./assets/saldo.png');
             const canvas = createCanvas(imagenBase.width, imagenBase.height);
             const ctx = canvas.getContext('2d');
             ctx.drawImage(imagenBase, 0, 0, canvas.width, canvas.height);
 
+            // Estilo de texto para la imagen
             ctx.font = 'bold 44px "Arial"';
             ctx.fillStyle = '#222';
             ctx.textAlign = 'center';
 
+            // Coordenadas ajustadas (según tu petición)
             ctx.fillText(formatoMoneda(usuarioEco.cartera), 674, 640);
             ctx.fillText(formatoMoneda(usuarioEco.banco), 650, 820);
             ctx.fillText(formatoMoneda(usuarioEco.ilega), 670, 1000);
 
             const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'saldo.png' });
-            const finalContainer = crearSaldoContainer(targetUser, usuarioEco, 'saldo.png');
+            const finalContainer = crearSaldoContainer(targetUser, usuarioEco, 'saldo.png', bancoInfo);
 
             await interaction.editReply({ 
                 components: [finalContainer], 
@@ -134,7 +141,7 @@ module.exports = {
 
         } catch (error) {
             console.error(error);
-            await interaction.editReply({ content: '❌ Error al sincronizar con la red bancaria.' });
+            await interaction.editReply({ content: '❌ Error al sincronizar con el banco.' });
         }
     }
 };

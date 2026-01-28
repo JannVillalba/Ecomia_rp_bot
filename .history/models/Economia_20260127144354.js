@@ -22,21 +22,6 @@ const Economia = sequelize.define('Economia', {
         defaultValue: 0,
         allowNull: false,
     },
-    // --- NUEVOS: Sistema Bancario V2 (Art. 27) ---
-    bancoNombre: {
-        type: DataTypes.STRING,
-        defaultValue: 'Ninguno',
-        allowNull: false,
-    },
-    cuentaTipo: {
-        type: DataTypes.STRING,
-        defaultValue: 'Sin cuenta',
-        allowNull: false,
-    },
-    tasaInteres: {
-        type: DataTypes.FLOAT,
-        defaultValue: 0,
-    },
     // --- Campos de Supervivencia (Art. 81, 89, 90) ---
     hambre: {
         type: DataTypes.INTEGER,
@@ -54,7 +39,7 @@ const Economia = sequelize.define('Economia', {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
     },
-    // --- Sistema Bancario (Credit Score) ---
+    // --- Sistema Bancario (Art. 27) ---
     creditScore: {
         type: DataTypes.INTEGER,
         defaultValue: 5,
